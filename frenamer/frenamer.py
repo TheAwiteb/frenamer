@@ -182,13 +182,13 @@ def dir_renamer(
         old_name = typer.style(
             old_name,
             fg=(
-                typer.colors.MAGENTA if "." in old_name else typer.colors.BRIGHT_MAGENTA
+                typer.colors.MAGENTA if os.path.isfile(os.path.join(new_directory.as_posix(), old_name)) else typer.colors.BRIGHT_MAGENTA
             ),
         )
         new_name = typer.style(
             new_name,
             fg=(
-                typer.colors.MAGENTA if "." in new_name else typer.colors.BRIGHT_MAGENTA
+                typer.colors.MAGENTA if os.path.isfile(os.path.join(new_directory.as_posix(), new_name)) else typer.colors.BRIGHT_MAGENTA
             ),
         )
         typer.echo(f"Rename {old_name} to {new_name}")
@@ -238,7 +238,7 @@ def unrename_from_json(json_file: Path, delete: bool) -> Tuple[int, int]:
                     old_name.name,
                     fg=(
                         typer.colors.MAGENTA
-                        if "." in old_name.name
+                        if os.path.isfile(os.path.join(old_name.as_posix()))
                         else typer.colors.BRIGHT_MAGENTA
                     ),
                 )
@@ -246,7 +246,7 @@ def unrename_from_json(json_file: Path, delete: bool) -> Tuple[int, int]:
                     new_name.name,
                     fg=(
                         typer.colors.MAGENTA
-                        if "." in new_name.name
+                        if os.path.isfile(os.path.join(new_name.as_posix()))
                         else typer.colors.BRIGHT_MAGENTA
                     ),
                 )
