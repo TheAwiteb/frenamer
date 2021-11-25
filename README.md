@@ -78,7 +78,7 @@ $ pip3 install frenamer
 ```bash
 $ git clone https://github.com/TheAwiteb/frenamer/
 $ cd frenamer
-$ python3 setup.py install
+$ sudo python3 setup.py install
 ```
 
 ### Update
