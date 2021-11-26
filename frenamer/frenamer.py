@@ -75,7 +75,7 @@ app = typer.Typer(
 
 __all__ = (
     "app",
-    "get_content",
+    "get_dir_content",
     "get_dir_name",
     "file_renamer",
     "dir_renamer",
@@ -89,56 +89,106 @@ __all__ = (
 )
 
 
-def get_content(path: str) -> Tuple[str, List[Optional[str]], List[Optional[str]]]:
+def get_dir_content(path: str) -> Tuple[str, List[Optional[str]], List[Optional[str]]]:
+    """ارجاع محتوى المجلد
+
+    المعطيات:
+        path (str): المجلد المراد جلب محتوياته
+
+    المخرجات:
+        Tuple[str, List[Optional[str]], List[Optional[str]]]: مسار المجلد، المجلدات التي يحتويها، الملفات التي يحتويها
+    """
     for root, dirs, files in os.walk(path, topdown=True):
         return (root, dirs, files)
 
 
-def get_dir_name(start_with: str, root: str, random: bool, length: int) -> str:
-    _, dirs, _ = get_content(root)
+def get_dir_name(
+    start_with: str,
+    root: str,
+    random: Optional[bool] = False,
+    length: Optional[int] = 10,
+) -> str:
+    """ارجاع اسم مجلد الجديد (يمكن استخدامه في المسار)
+
+    المعطيات:
+        start_with (str): بداية اسم للمجلد المراد جلبه
+        root (str): المسار الذي سوف يتم وضع المجلد فيه
+        random (Optional[bool], optional): تحديد ما إذا كنت تريد الاسم عشوائي ام لا. Defaults to False.
+        length (Optional[int], optional): طول الاسم العشوائي اذ كنت تريد. Defaults to 10.
+
+    المخرجات:
+        str: اسم مجلد يمكن وضعه في المسار المعطى
+    """
+    _, dirs, _ = get_dir_content(root)
     if random:
-        dir_name = "".join(choice(ascii_letters) for _ in range(length or 10))
+        dir_name = "".join(choice(ascii_letters) for _ in range(length))
         while dir_name in dirs:
-            dir_name = "".join(choice(ascii_letters) for _ in range(length or 10))
+            dir_name = "".join(choice(ascii_letters) for _ in range(length))
         return dir_name
     else:
         for char in ascii_letters:
-            dir_name = (f"{start_with}-{char}") if start_with else char
+            dir_name = (f"{start_with}-{char}") if start_with else (char)
             if dir_name in dirs:
                 continue
             else:
                 return dir_name
+    # يتم تشغيل هذا السطر اذ لم يجد اسم ابجدي للمجلد
+    # فيتم اعاطه الاسم الاخير ولذي يكون
+    # 'Z', 'Z-Z', 'Z-Z-Z' ...
+    # حيث يتم تمريره كبداية للاسم
     return get_dir_name(dir_name, root, random=random, length=length)
 
 
-def file_renamer(path: Path, dir_name: str) -> dict:
-    _, _, files = get_content(path.parent.as_posix())
+def file_renamer(file: Path) -> dict:
+    """اعادة تسمية الملف المعطى
+
+    المعطيات:
+        file (Path): الملف المراد اعادة تسميته
+
+    المخرجات:
+        dict: الاسم القديم والجديد الخاص بالملف
+    """
+    directory = file.parent
+    _, _, files = get_dir_content(directory.as_posix())
     files = list(map(lambda file: file.split(".")[0], files))
     num = 1
-    new_file_name = f"{dir_name}-{num}"
+    new_file_name = f"{directory.name}-{num}"
     while new_file_name in files:
         num += 1
-        new_file_name = f"{dir_name}-{num}"
-    new_file_name = f"{dir_name}-{num}{''.join(path.suffixes)}"
-    new_path = path.rename(path.with_name(new_file_name))
-    return {"old": path.name, "new": new_path.name}
+        new_file_name = f"{directory.name}-{num}"
+    new_file_name = f"{directory.name}-{num}{''.join(file.suffixes)}"
+    new_path = file.rename(file.with_name(new_file_name))
+    return {"old": file.name, "new": new_path.name}
 
 
 def dir_renamer(
     directory: Path,
-    random: bool,
-    length: Optional[int] = None,
+    random: Optional[bool] = False,
+    length: Optional[int] = 10,
     is_root: Optional[bool] = False,
-    save_data: Optional[bool] = None,
+    save_data: Optional[bool] = False,
     data_filename: Optional[str] = "rename_data.json",
 ) -> Tuple[Path, int, int]:
+    """اعادة تمسية محتوى المجلد
+
+    المعطيات:
+        directory (Path): الملجد المراد اعادة تسمية محتوياته
+        random (bool): تحديد ما إذا كنت تريد اسم عشوائي للمجلد ام لا. Defaults to False.
+        length (Optional[int], optional): طول الاسم العشوائي ان وجد. Defaults to 10.
+        is_root (Optional[bool], optional): هل هذا المجلد الاساسي المراد تسمية محتوياته. Defaults to False.
+        save_data (Optional[bool], optional): تحديد ما إذا كنت تريد حفظ الاسماء القديمة في ملف. Defaults to False.
+        data_filename (Optional[str], optional): اسم الملف المراد حفظ الاسماء فيه ان وجد. Defaults to "rename_data.json".
+
+    المخرجات:
+        Tuple[Path, int, int]: المسار الجديد الخاص بالمجلد، عدد المجلدات التي تم اعادة تسميتها، عدد الملفات التي تم اعادة تسميتها
+    """
     dirs_name: List[dict] = []
     files_name: List[dict] = []
     total_dirs: int = 0
     total_files: int = 0
 
     new_dir_name = get_dir_name(
-        "", root=f"{directory.as_posix()}/..", random=random, length=length
+        start_with="", root=directory.parent.as_posix(), random=random, length=length
     )
     if is_root:
         new_directory = directory
@@ -146,16 +196,16 @@ def dir_renamer(
         new_directory = directory.rename(directory.with_name(new_dir_name))
         total_dirs += 1
     new_directory_path = new_directory.as_posix()
-    _, dirs, files = get_content(new_directory_path)
+    _, dirs, files = get_dir_content(new_directory_path)
 
     for file in files:
-        file = Path(f"{new_directory_path}/{file}")
-        file_data = file_renamer(file, new_directory.name)
+        file = Path(os.path.join(new_directory_path, file))
+        file_data = file_renamer(file)
         files_name.append(file_data)
         total_files += 1
 
     for sub_directory in dirs:
-        sub_directory = Path(f"{new_directory_path}/{sub_directory}")
+        sub_directory = Path(os.path.join(new_directory_path, sub_directory))
         new_sub_directory, total_dirs_, total_files_ = dir_renamer(
             sub_directory,
             random=random,
@@ -179,22 +229,12 @@ def dir_renamer(
 
     for file in names:
         old_name, new_name = file.values()
-        old_name = typer.style(
-            old_name,
-            fg=(
-                typer.colors.MAGENTA if os.path.isfile(os.path.join(new_directory.as_posix(), old_name)) else typer.colors.BRIGHT_MAGENTA
-            ),
-        )
-        new_name = typer.style(
-            new_name,
-            fg=(
-                typer.colors.MAGENTA if os.path.isfile(os.path.join(new_directory.as_posix(), new_name)) else typer.colors.BRIGHT_MAGENTA
-            ),
-        )
         typer.echo(f"Rename {old_name} to {new_name}")
     if save_data:
         with open(
-            f"{new_directory.as_posix()}/{data_filename}", mode="w", encoding="utf-8"
+            os.path.join(new_directory.as_posix(), data_filename),
+            mode="w",
+            encoding="utf-8",
         ) as f:
             obj = {
                 "frenamerVersion": version,
@@ -205,15 +245,33 @@ def dir_renamer(
     return new_directory, total_dirs, total_files
 
 
-def get_json_files(directory: Path, json_filename: str) -> List[str]:
+def get_json_files(directory: Path, json_filename: str) -> List[Optional[str]]:
+    """ارجاع جميع ملفات المطابقة لاسم ملف الجيسون في محتوى المجلد
+
+    المعطيات:
+        directory (Path): المجلد المراد استخراج منه جميع الملفات المتطايقة مع اسم ملفات الجيسون
+        json_filename (str): اسم ملف الجيسون
+
+    المخرجات:
+        List[Optional[str]]: ملفات الجيسون الموجودة في المجلد
+    """
     return [
-        f"{root}/{json_filename}"
+        os.path.join(root, json_filename)
         for root, _, files in os.walk(directory.as_posix(), topdown=False)
         if json_filename in files
     ]
 
 
 def unrename_from_json(json_file: Path, delete: bool) -> Tuple[int, int]:
+    """اعادة تمسية الملفات الموجودة في ملف الجيسون
+
+    المعطيات:
+        json_file (Path): ملف الجيسون
+        delete (bool): حذف ملف الجيسون بعد اعادة التسمية ام لا
+
+    المخرجات:
+        Tuple[int, int]: اجمالي المجلدات التي تم اعادة تسميتها اجمالي الملفات التي تم اعادة تسميتها
+    """
     total_dirs = 0
     total_files = 0
     path = json_file.parent
@@ -228,29 +286,15 @@ def unrename_from_json(json_file: Path, delete: bool) -> Tuple[int, int]:
                     )
                 )
             for names in rename_data.get("names"):
-                old_name, new_name = [Path(f"{path}/{name}") for name in names.values()]
+                old_name, new_name = [
+                    Path(os.path.join(path.as_posix(), name)) for name in names.values()
+                ]
                 new_name.rename(old_name)
                 if old_name.is_dir():
                     total_dirs += 1
                 else:
                     total_files += 1
-                old_name = typer.style(
-                    old_name.name,
-                    fg=(
-                        typer.colors.MAGENTA
-                        if os.path.isfile(os.path.join(old_name.as_posix()))
-                        else typer.colors.BRIGHT_MAGENTA
-                    ),
-                )
-                new_name = typer.style(
-                    new_name.name,
-                    fg=(
-                        typer.colors.MAGENTA
-                        if os.path.isfile(os.path.join(new_name.as_posix()))
-                        else typer.colors.BRIGHT_MAGENTA
-                    ),
-                )
-                typer.echo(f"Rename {new_name} to {old_name}")
+                typer.echo(f"Rename {new_name.name} to {old_name.name}")
         else:
             typer.echo(
                 typer.style(
@@ -259,11 +303,20 @@ def unrename_from_json(json_file: Path, delete: bool) -> Tuple[int, int]:
                 )
             )
     if delete:
-        os.remove(json_file)
+        os.remove(json_file.as_posix())
     return total_dirs, total_files
 
 
 def get_name_from_json(dir_name: str, json_file: Path) -> str:
+    """جلب اسم المجلد القديم
+
+    المعطيات:
+        dir_name (str): اسم المجلد الجديد
+        json_file (Path): ملف الجيسون المراد استخراج اسم المجلد القديم منه
+
+    المخرجات:
+        str: اسم المجلد القديم
+    """
     names: List[dict] = loads(json_file.read_bytes()).get("names")
     return list(filter(lambda name_dct: name_dct.get("new_name") == dir_name, names))[
         0
@@ -271,6 +324,16 @@ def get_name_from_json(dir_name: str, json_file: Path) -> str:
 
 
 def get_unrename_dir(rename_dir: Path, json_files: List[Path], root_name: str) -> str:
+    """جلب المسار القديم الخاص بالمسار الجديد
+
+    Args:
+        rename_dir (Path): المسار الجديد المراد جلب مساره القديم
+        json_files (List[Path]): ملفات الجيسون التي سوف يتم استخراج الاسماء القديمة منها
+        root_name (str): اسم المجلد الذي يتم اعادة تسمية محتوياته
+
+    Returns:
+        str: المسار القديم
+    """
     paths: List[Path] = list(
         map(
             lambda json_file: (
