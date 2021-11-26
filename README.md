@@ -1,5 +1,6 @@
 <div align="center">
   <h1>Frenamer (file-renamer)</h1>
+  <img alt="Frenamer-logo" src="https://i.suar.me/Gxlly/s"><br>
   <p>Rename and unrename all files in the directory, alphabetically or randomly</p>
   <a href="https://pypi.org/project/frenamer/">
     <img alt="PyPI - Python Version" src="https://img.shields.io/pypi/pyversions/frenamer?color=9cf">
