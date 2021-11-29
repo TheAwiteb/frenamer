@@ -75,6 +75,8 @@ app = typer.Typer(
 
 __all__ = (
     "app",
+    "print_dir_path",
+    "print_old_new_name",
     "get_dir_content",
     "get_dir_name",
     "file_renamer",
@@ -87,6 +89,32 @@ __all__ = (
     "rename",
     "unrename",
 )
+
+
+def print_dir_path(dir_path: str) -> None:
+    """طباعة المسار الخاص بالمجلد
+
+    المعطيات:
+        dir_path (str): المسار المراد طباعته
+    """
+    typer.echo(
+        typer.style(
+            "Directory: " + dir_path,
+            fg=typer.colors.CYAN,
+        )
+    )
+
+
+def print_old_new_name(old_name: str, new_name: str) -> None:
+    """طباعة الاسم القديم والجديد
+
+    Args:
+        old_name (str): الاسم القديم والجديد
+        new_name (str): الاسم الجديد
+    """
+    rename_word = typer.style(" Rename ", fg="yellow")
+    to_word = typer.style(" to ", fg="yellow")
+    typer.echo(rename_word + old_name + to_word + new_name)
 
 
 def get_dir_content(path: str) -> Tuple[str, List[Optional[str]], List[Optional[str]]]:
@@ -220,27 +248,24 @@ def dir_renamer(
         )
 
     names = dirs_name + files_name
-    typer.echo(
-        typer.style(
-            "Directory: " + new_directory.as_posix(),
-            fg=typer.colors.CYAN,
-        )
-    )
+    if any(get_dir_content(new_directory.as_posix())[1:]):
+        print_dir_path(new_directory.as_posix())
+
+        if save_data:
+            with open(
+                os.path.join(new_directory.as_posix(), data_filename),
+                mode="w",
+                encoding="utf-8",
+            ) as f:
+                obj = {
+                    "frenamerVersion": version,
+                    "names": names,
+                }
+                dump(obj, f, indent=4)
 
     for file in names:
         old_name, new_name = file.values()
-        typer.echo(f"Rename {old_name} to {new_name}")
-    if save_data:
-        with open(
-            os.path.join(new_directory.as_posix(), data_filename),
-            mode="w",
-            encoding="utf-8",
-        ) as f:
-            obj = {
-                "frenamerVersion": version,
-                "names": names,
-            }
-            dump(obj, f, indent=4)
+        print_old_new_name(old_name, new_name)
 
     return new_directory, total_dirs, total_files
 
@@ -294,7 +319,7 @@ def unrename_from_json(json_file: Path, delete: bool) -> Tuple[int, int]:
                     total_dirs += 1
                 else:
                     total_files += 1
-                typer.echo(f"Rename {new_name.name} to {old_name.name}")
+                print_old_new_name(new_name.name, old_name.name)
         else:
             typer.echo(
                 typer.style(
@@ -475,9 +500,6 @@ def rename(
         total_dirs += total_dirs_
         total_files += total_files_
 
-    total_dirs = typer.style(str(total_dirs), fg=typer.colors.BRIGHT_MAGENTA)
-    total_files = typer.style(str(total_files), fg=typer.colors.MAGENTA)
-
     typer.echo(
         f"\nRenaming {total_dirs} directories, {total_files} files, in {round(time() - start_time, 4)}"
     )
@@ -534,20 +556,17 @@ def unrename(
         )
         if len(json_files) >= 1:
             for json_file in json_files:
-                typer.echo(
-                    typer.style(
-                        "Directory: "
-                        + get_unrename_dir(
-                            json_file.parent, json_files, root_name=directory.name
-                        ),
-                        fg=typer.colors.CYAN,
-                    )
+                path = get_unrename_dir(
+                    json_file.parent, json_files, root_name=directory.name
                 )
+                if any(get_dir_content(path)[1:]):
+                    print_dir_path(path)
                 total_dirs_, total_files_ = unrename_from_json(
                     json_file=json_file, delete=delete_json_files
                 )
                 total_dirs += total_dirs_
                 total_files += total_files_
+
         else:
             typer.echo(
                 typer.style(
@@ -555,8 +574,6 @@ def unrename(
                     fg=typer.colors.RED,
                 )
             )
-    total_dirs = typer.style(str(total_dirs), fg=typer.colors.BRIGHT_MAGENTA)
-    total_files = typer.style(str(total_files), fg=typer.colors.MAGENTA)
     typer.echo(
         f"\nRenaming {total_dirs} directories, {total_files} files, in {round(time() - start_time, 4)}"
     )
