@@ -556,11 +556,12 @@ def unrename(
         )
         if len(json_files) >= 1:
             for json_file in json_files:
-                path = get_unrename_dir(
+                unrename_path = get_unrename_dir(
                     json_file.parent, json_files, root_name=directory.name
                 )
-                if any(get_dir_content(path)[1:]):
-                    print_dir_path(path)
+                # json_file.parent because unrename_path is json_file.parent but with old name
+                if any(get_dir_content(json_file.parent)[1:]):
+                    print_dir_path(unrename_path)
                 total_dirs_, total_files_ = unrename_from_json(
                     json_file=json_file, delete=delete_json_files
                 )
