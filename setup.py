@@ -26,11 +26,7 @@ setup(
     packages=find_packages(),
     license="MIT",
     keywords=KEYWORD,
-    entry_points={
-        "console_scripts": [
-            "frenamer = frenamer.__main__:app"
-        ]
-    },
+    entry_points={"console_scripts": ["frenamer = frenamer.__main__:app"]},
     classifiers=[
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
