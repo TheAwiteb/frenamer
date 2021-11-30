@@ -10,62 +10,6 @@ from string import ascii_letters
 if __name__ != "__main__":
     from .version import version
 
-home_help_message = """
-Usage: python3 -m frenamer [OPTIONS] COMMAND [ARGS]...
-
-    Frenamer (File-Renamer) Tool help you to rename files and directories
-    alphabetical or random names.
-
-Options:
-    -V, --version  Frenamer (File-Renamer) version.
-    -h, --help     Show this message and exit.
-
-Commands:
-    rename    rename directories.
-    unrename  unrename directories.
-"""
-
-rename_help_message = """
-Usage: python3 -m frenamer rename [OPTIONS] DIRECTORIES...
-
-    rename directories.
-
-    Arguments:
-    DIRECTORIES...  Directories whose contents you want to rename.  [required]
-
-    Options:
-    -r, --random                Rename with random names, or alphabetically.
-                                [default: False]
-
-    -l, --length INTEGER        Random name length.  [default: 10]
-    -s, --save-date             Save directory names before and after renaming.
-                                [default: False]
-
-    -f, --filename TEXT         The name of the json file in which the directory
-                                names are to be saved.  [default:
-                                rename_data.json]
-
-    -h, --help                   Show this message and exit.
-"""
-
-unrename_help_message = """
-Usage: python3 -m frenamer unrename [OPTIONS] DIRECTORIES...
-
-    unrename directories.
-
-    Arguments:
-    DIRECTORIES...  Directories whose contents you want to unrename.  [required]
-
-    Options:
-    -d, --delete         Delete the JSON files that were used in the unrenaming
-                        after completion.  [default: False]
-
-    -f, --filename TEXT  The name of the json file from which the directory
-                        names will be extracted.  [default: rename_data.json]
-
-
-    -h, --help            Show this message and exit.
-"""
 
 app = typer.Typer(
     name="Frenamer",
@@ -393,33 +337,6 @@ def version_callback(value: bool) -> None:
         raise typer.Exit()
 
 
-def home_help_callback(value: bool) -> None:
-    """
-    -h, --help option callback
-    """
-    if value:
-        typer.echo(home_help_message)
-        raise typer.Exit()
-
-
-def rename_help_callback(value: bool) -> None:
-    """
-    -h, --help option callback
-    """
-    if value:
-        typer.echo(rename_help_message)
-        raise typer.Exit()
-
-
-def unrename_help_callback(value: bool) -> None:
-    """
-    -h, --help option callback
-    """
-    if value:
-        typer.echo(unrename_help_message)
-        raise typer.Exit()
-
-
 @app.callback()
 def callback(
     version: Optional[bool] = typer.Option(
@@ -428,15 +345,6 @@ def callback(
         "-V",
         help="Frenamer (File-Renamer) version.",
         callback=version_callback,
-        show_default=False,
-    ),
-    help: Optional[bool] = typer.Option(
-        False,
-        "--help",
-        "-h",
-        help="Show this message and exit.",
-        callback=home_help_callback,
-        is_eager=True,
         show_default=False,
     ),
 ) -> None:
@@ -471,18 +379,9 @@ def rename(
         "-f",
         help="The name of the json file in which the directory names are to be saved.",
     ),
-    help: Optional[bool] = typer.Option(
-        False,
-        "--help",
-        "-h",
-        help="Show this message and exit.",
-        callback=rename_help_callback,
-        is_eager=True,
-        show_default=False,
-    ),
 ) -> None:
     """
-    rename directories.
+    Rename directories with random names or alphabetical order.
     """
     start_time = time()
     total_dirs: int = 0
@@ -533,18 +432,9 @@ def unrename(
         "-f",
         help="The name of the json file from which the directory names will be extracted.",
     ),
-    help: Optional[bool] = typer.Option(
-        False,
-        "--help",
-        "-h",
-        help="Show this message and exit.",
-        callback=unrename_help_callback,
-        is_eager=True,
-        show_default=False,
-    ),
 ) -> None:
     """
-    unrename directories.
+    unrename directories, fetching old names from json files.
     """
     start_time = time()
     total_dirs: int = 0
@@ -584,5 +474,5 @@ if __name__ == "__main__":
 
     typer.echo(
         typer.style("Try again, the correct way to run the tool is ", fg="red")
-        + "'python3 -m frenamer -h'"
+        + "'frenamer --help' or 'python3 -m frenamer --help'"
     )
