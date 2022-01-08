@@ -369,7 +369,7 @@ def rename(
     ),
     save_rename_data: Optional[bool] = typer.Option(
         False,
-        "--save-date",
+        "--save-data",
         "-s",
         help="Save directory names before and after renaming.",
     ),
